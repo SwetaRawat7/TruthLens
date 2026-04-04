@@ -4,8 +4,8 @@ import TrustScore from "./components/TrustScore";
 import FlagsList from "./components/FlagsList";
 import InfoCard from "./components/InfoCard";
 
-// ✅ IMPORTANT: Replace with your Render backend URL
-const API_BASE = "https://truthlens-backend.onrender.com/api";
+// ✅ FIXED: Correct Render backend URL
+const API_BASE = "https://truthlens-backend-sue6.onrender.com/api";
 
 function App() {
   const [url, setUrl] = useState("");
@@ -40,7 +40,7 @@ function App() {
       console.error(err);
 
       if (err.response) {
-        setError(err.response.data?.message || "Server error");
+        setError(err.response.data?.error || "Server error");
       } else if (err.request) {
         setError("No response from server (backend may be sleeping 😴)");
       } else {
@@ -80,8 +80,8 @@ function App() {
       {result && (
         <div className="w-full max-w-xl mt-6 space-y-4">
           <TrustScore score={result.trustScore} />
-          <FlagsList flags={result.flags} />
-          <InfoCard data={result.details} />
+          <FlagsList flags={result.flags || []} />
+          <InfoCard data={result.details || {}} />
         </div>
       )}
     </div>
