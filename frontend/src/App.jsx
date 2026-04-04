@@ -4,7 +4,7 @@ import TrustScore from "./components/TrustScore";
 import FlagsList from "./components/FlagsList";
 import InfoCard from "./components/InfoCard";
 
-// ✅ FIXED: Correct Render backend URL
+// ✅ Correct backend URL
 const API_BASE = "https://truthlens-backend-sue6.onrender.com/api";
 
 function App() {
@@ -77,11 +77,12 @@ function App() {
         )}
       </div>
 
+      {/* ✅ FIXED RESULT SECTION */}
       {result && (
         <div className="w-full max-w-xl mt-6 space-y-4">
-          <TrustScore score={result.trustScore} />
+          <TrustScore score={result.trustScore || 0} />
           <FlagsList flags={result.flags || []} />
-          <InfoCard data={result.details || {}} />
+          <InfoCard data={result.ai || {}} />
         </div>
       )}
     </div>
