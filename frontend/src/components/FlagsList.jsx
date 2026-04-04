@@ -10,14 +10,34 @@ function FlagsList({ flags = [] }) {
 
   return (
     <div className="bg-white p-4 rounded-xl shadow">
-      <h2 className="font-bold">Flags</h2>
-      <ul className="list-disc ml-5">
+      <h2 className="font-bold mb-2">Flags</h2>
+
+      <div className="space-y-2">
         {flags.map((flag, index) => (
-          <li key={index}>{flag}</li>
+          <div
+            key={index}
+            className="p-3 border rounded-lg bg-gray-50"
+          >
+            <p className="font-semibold">
+              {flag.type || "Unknown"}
+            </p>
+
+            <p className="text-sm text-gray-600">
+              {flag.message || "No description"}
+            </p>
+
+            <p className="text-xs mt-1">
+              Severity:{" "}
+              <span className="font-bold">
+                {flag.severity || "N/A"}
+              </span>
+            </p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
 
 export default FlagsList;
+
