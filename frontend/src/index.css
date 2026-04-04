@@ -1,0 +1,111 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #090b10;
+  --bg2: #0d1117;
+  --bg3: #161b24;
+  --bg4: #1e2535;
+  --border: #1e2d45;
+  --border2: #243044;
+  --text: #e2e8f4;
+  --text2: #8b9ab8;
+  --text3: #4a5d80;
+  --accent: #00d4ff;
+  --accent2: #0099cc;
+  --green: #00ff88;
+  --green2: #00c96a;
+  --orange: #ff9a00;
+  --orange2: #cc7a00;
+  --red: #ff3d6b;
+  --red2: #cc1f4a;
+  --critical: #ff3d6b;
+  --high: #ff7043;
+  --medium: #ffd740;
+  --low: #69f0ae;
+  --font-body: "Syne", sans-serif;
+  --font-mono: "Space Mono", monospace;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 30px rgba(0, 212, 255, 0.08);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes scanLine {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes scoreReveal {
+  from { stroke-dashoffset: 251; }
+}
+@keyframes glitch {
+  0%, 100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
+  10% { clip-path: inset(10% 0 60% 0); transform: translate(-3px, 2px); }
+  30% { clip-path: inset(50% 0 20% 0); transform: translate(3px, -2px); }
+  50% { clip-path: inset(20% 0 70% 0); transform: translate(-3px, 0); }
+  70% { clip-path: inset(60% 0 10% 0); transform: translate(0, 2px); }
+  90% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -1px); }
+}
+
+.fade-in { animation: fadeIn 0.45s ease both; }
+.slide-in { animation: slideIn 0.35s ease both; }
+
+/* Grid scan overlay */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+  animation: scanLine 8s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
