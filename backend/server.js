@@ -13,92 +13,141 @@ const { analyzeWithAI } = require("./utils/aiAnalyzer");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Middleware
+// ✅ MIDDLEWARE
 app.use(helmet());
+
 app.use(cors({
-  origin: "*", // allow all (important for Vercel frontend)
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
 }));
+
 app.use(express.json());
 
-// ✅ Test route (VERY IMPORTANT for Render)
+// ✅ RATE LIMIT (added message for clarity)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: "Too many requests. Try again later." }
+});
+app.use("/api/", limiter);
+
+// ✅ ROOT ROUTE (IMPORTANT for Render)
 app.get("/", (req, res) => {
   res.send("Backend working 🚀");
 });
 
-// ✅ Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-});
-app.use("/api/", limiter);
-
-// ✅ Health check
+// ✅ HEALTH CHECK (improved)
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
+    aiEnabled: !!process.env.ANTHROPIC_API_KEY,
+    whoisEnabled: !!process.env.WHOISXML_API_KEY
   });
 });
 
-// ✅ Main API
+// ✅ MAIN API
 app.post("/api/analyze", async (req, res) => {
   const startTime = Date.now();
   const { url } = req.body;
 
-  if (!url) {
-    return res.status(400).json({ error: "URL required" });
+  if (!url || typeof url !== "string") {
+    return res.status(400).json({ error: "Valid URL required" });
   }
 
   try {
-    const urlAnalysis = analyzeUrl(url);
-    const hostname = urlAnalysis.details.hostname;
-    const domain = urlAnalysis.details.domain;
+    const cleanUrl = url.trim();
 
+    // 🔹 STEP 1: URL ANALYSIS
+    const urlAnalysis = analyzeUrl(cleanUrl);
+    const hostname = urlAnalysis?.details?.hostname;
+    const domain = urlAnalysis?.details?.domain;
+
+    // 🔹 STEP 2: PARALLEL CHECKS (SAFE)
     const [dnsInfo, domainInfo, contentInfo] = await Promise.allSettled([
-      checkDnsResolution(hostname),
-      checkDomainRegistration(domain),
-      fetchWebsiteContent(url)
+      hostname ? checkDnsResolution(hostname) : Promise.resolve(null),
+      domain ? checkDomainRegistration(domain) : Promise.resolve(null),
+      fetchWebsiteContent(cleanUrl)
     ]);
 
-    const dnsResult = dnsInfo.status === "fulfilled" ? dnsInfo.value : {};
-    const domainResult = domainInfo.status === "fulfilled" ? domainInfo.value : {};
-    const contentResult = contentInfo.status === "fulfilled" ? contentInfo.value : {};
+    const dnsResult = dnsInfo.status === "fulfilled" && dnsInfo.value
+      ? dnsInfo.value
+      : { resolves: false, flags: [], score: 0 };
 
-    const aiResult = await analyzeWithAI({
-      rawUrl: url,
-      urlAnalysis,
-      domainInfo: domainResult,
-      dnsInfo: dnsResult,
-      contentInfo: contentResult
-    });
+    const domainResult = domainInfo.status === "fulfilled" && domainInfo.value
+      ? domainInfo.value
+      : { registered: null, flags: [], score: 0 };
 
-    let trustScore = urlAnalysis.score || 0;
+    const contentResult = contentInfo.status === "fulfilled" && contentInfo.value
+      ? contentInfo.value
+      : { accessible: false, flags: [], score: 0 };
 
-    if (aiResult.aiScore !== null) {
-      trustScore = Math.round((trustScore + aiResult.aiScore) / 2);
+    // 🔹 STEP 3: AI ANALYSIS
+    let aiResult = { aiScore: null, analysis: "AI not available" };
+
+    try {
+      aiResult = await analyzeWithAI({
+        rawUrl: cleanUrl,
+        urlAnalysis,
+        domainInfo: domainResult,
+        dnsInfo: dnsResult,
+        contentInfo: contentResult
+      });
+    } catch (e) {
+      console.log("AI failed, continuing...");
     }
 
-    let verdict = trustScore > 70 ? "SAFE" : trustScore > 40 ? "SUSPICIOUS" : "HIGH RISK";
+    // 🔹 STEP 4: TRUST SCORE (IMPROVED)
+    let trustScore =
+      (urlAnalysis?.score || 0) +
+      (domainResult?.score || 0) +
+      (dnsResult?.score || 0) +
+      (contentResult?.score || 0);
+
+    if (aiResult.aiScore !== null) {
+      trustScore = Math.round((trustScore * 0.5) + (aiResult.aiScore * 0.5));
+    }
+
+    trustScore = Math.max(0, Math.min(100, trustScore));
+
+    // 🔹 STEP 5: VERDICT
+    let verdict = "HIGH RISK";
+    if (trustScore >= 75) verdict = "LIKELY SAFE";
+    else if (trustScore >= 45) verdict = "SUSPICIOUS";
+
+    // 🔹 FLAGS (combined)
+    const flags = [
+      ...(urlAnalysis?.flags || []),
+      ...(domainResult?.flags || []),
+      ...(dnsResult?.flags || []),
+      ...(contentResult?.flags || [])
+    ];
 
     res.json({
       success: true,
+      analyzedUrl: cleanUrl,
       trustScore,
       verdict,
-      ai: aiResult,
-      time: Date.now() - startTime
+      time: Date.now() - startTime,
+      flags,
+      ai: aiResult
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    console.error("ERROR:", err);
+    res.status(500).json({
+      success: false,
+      error: "Analysis failed"
+    });
   }
 });
 
-// ✅ 404
+// ✅ 404 HANDLER
 app.use((req, res) => {
-  res.status(404).json({ error: "Not found" });
+  res.status(404).json({ error: "Endpoint not found" });
 });
 
-// ✅ START SERVER (CRITICAL FOR RENDER)
+// ✅ START SERVER (CRITICAL)
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
