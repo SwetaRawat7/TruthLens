@@ -1,10 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
-import TrustScore from "./components/TrustScore";
-import FlagsList from "./components/FlagsList";
-import InfoCard from "./components/InfoCard";
 
-// ✅ FIXED BASE URL (NO /api here)
+// ✅ TEMP: Removed components to fix build error
+
 const API_BASE = "https://truthlens-backend-sue6.onrender.com";
 
 function App() {
@@ -25,7 +23,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        `${API_BASE}/api/analyze`, // ✅ CORRECT PATH
+        `${API_BASE}/api/analyze`,
         { url },
         {
           timeout: 75000,
@@ -77,12 +75,13 @@ function App() {
         )}
       </div>
 
-      {/* ✅ SAFE RESULT SECTION */}
+      {/* ✅ TEMP RESULT OUTPUT (SAFE) */}
       {result && (
-        <div className="w-full max-w-xl mt-6 space-y-4">
-          <TrustScore score={result.trustScore || 0} />
-          <FlagsList flags={result.flags || []} />
-          <InfoCard data={result.ai || {}} />
+        <div className="w-full max-w-xl mt-6 bg-white p-4 rounded-xl shadow">
+          <h2 className="font-bold mb-2">Result:</h2>
+          <pre className="text-sm overflow-x-auto">
+            {JSON.stringify(result, null, 2)}
+          </pre>
         </div>
       )}
     </div>
